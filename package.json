@@ -1,0 +1,14 @@
+{
+  "name": "neural-networks",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Joan-Diego Rodriguez <rodriguezjoan@gmail.com> (https://trymako.com)",
+  "license": "ISC",
+  "dependencies": {
+    "brain.js": "^0.7.0"
+  }
+}
