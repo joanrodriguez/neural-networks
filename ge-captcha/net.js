@@ -1,4 +1,5 @@
 var trainingData = [];
+var net = new brain.NeuralNetwork({hiddenLayers: [128,128]});
 
 $(function(){
   setTimeout(initSlider,0);
@@ -8,6 +9,7 @@ $(function(){
   setTimeout(parseLetters,200);
   setTimeout(scaleLetters,400);
   setTimeout(formatLetters,600);
+  setTimeout(bindScaled,1000);
 });
 
 function initSlider() {
@@ -248,20 +250,49 @@ function guessImageDatas(imgDatas){
 
 function bindButtons() {
   $('.makeinput').click(function(){
+    trainingData = [];
     var $scaled = $('.scaled canvas');
     var $inputs = $('input.letterBox');
-    console.log($inputs[0].value);
 
     $scaled.each(function(i, elem){
-      var scaledLetter = elem.getContext("2d").getImageData(0,0,elem.width,elem.height);
-      var answer = $inputs[i].value;
-      trainingData.push({
-        input: formatForBrain(scaledLetter),
-        output: answer
-      });
+      if($inputs[i].value) {
+        var scaledLetter = elem.getContext("2d").getImageData(0,0,elem.width,elem.height);
+        var answer = {};
+        answer[$inputs[i].value] = 1;
+        trainingData.push({
+          input: formatForBrain(scaledLetter),
+          output: answer
+        });
+      }
     });
     console.log(trainingData);
 
+  });
+
+  $('.trainBrain').click(function(){
+    console.log('Starting the training');
+    net.train(trainingData,{
+      errorThresh: 0.005,  // error threshold to reach
+      iterations: 200,   // maximum training iterations
+      log: true,           // console.log() progress periodically
+      logPeriod: 10       // number of iterations between logging
+    });
+    console.log("Training Done");
+  });
+
+}
+
+function bindScaled(){
+  $('.scaled canvas').click(function(e){
+    var data = this.getContext("2d").getImageData(0,0,this.width,this.height);
+    var guesses = net.run(formatForBrain(data));
+    var guess = {string: "", probability: 0};
+    for (var k in guesses) {
+      if (guesses[k] > guess.probability) {
+        guess = {string: k, probability: guesses[k] }
+      }
+    }
+    alert("I think it's a... " + guess.string + "! (probability of " + Math.floor(guess.probability*100) + "%)")
   })
 }
 
