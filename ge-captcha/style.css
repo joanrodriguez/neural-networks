@@ -11,7 +11,7 @@ table th, table td {
 }
 
 td {
-  background-color: red;
+  background-color: #dedede;
 }
 
 td canvas {
