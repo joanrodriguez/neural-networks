@@ -1,6 +1,7 @@
 $(document).ready(function() {
 
   init();
+  parseLetters();
 
 });
 
@@ -11,26 +12,33 @@ $( function() {
       max: 255,
       step: 1,
       slide: function( event, ui ) {
-        $( "#amount" ).val( ui.value );
+        $( "#threshold" ).val( ui.value );
       },
       stop: function( event, ui ) {
-        init(ui.value);
+        parseLetters(ui.value);
       },
     });
-    $( "#amount" ).val( $( "#slider" ).slider( "value" ) );
+    $( "#threshold" ).val( $( "#slider" ).slider( "value" ) );
 } );
 
 
+function init() {
+    $(".original img").parents("tr").each(function(index, elem){
+      for(var i = 0; i<10; i++)
+        $(elem).append($('<td></td>'));
+    });
+};
 
-function init(threshold){
+
+function parseLetters(threshold){
 
   threshold = threshold?threshold:100;
 
-  // Remove all tds
+  // Empty all tds
   $(".original img").each(function(index, elem) {
     $(elem).parents("tr").find("td").each(function(index, elem){
       if(index>0)
-        elem.remove();
+        $(elem).empty();
     });
   });
 
@@ -64,7 +72,7 @@ function init(threshold){
 
   })
 
-  $(".original img").each(function(index, value) {
+  $(".original img").each(function(captchaIndex, value) {
     
     var img = $(this)[0];
 
@@ -116,7 +124,7 @@ function init(threshold){
     }
 
 
-    letters.map(function(letter){
+    letters.map(function(letter, i){
 
       var canvas = document.createElement("canvas");
       canvas.width = letter.width;
@@ -126,13 +134,13 @@ function init(threshold){
 
       console.log(canvas);
 
-      $(img).parents("tr").append($('<td></td>').append(canvas));
+      $(img).parents("tr").find("td")[i+1].append(canvas);
 
     })
 
     var scaledLetters = [];
 
-    letters.map(function(letter){
+    letters.map(function(letter, i){
       
       var s = 15;
       var canvas = document.createElement('canvas');
@@ -160,7 +168,8 @@ function init(threshold){
       console.log(square);
       scaledLetters.push(square);
 
-      $(img).parents("tr").append($('<td></td>').append(canvas));
+
+      $(img).parents("tr").find("td")[i+6].append(canvas);
 
 
     });
