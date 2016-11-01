@@ -9,6 +9,7 @@
   "author": "Joan-Diego Rodriguez <rodriguezjoan@gmail.com> (https://trymako.com)",
   "license": "ISC",
   "dependencies": {
-    "brain.js": "^0.7.0"
+    "brain.js": "^0.7.0",
+    "nedb": "^1.8.0"
   }
 }

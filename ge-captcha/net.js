@@ -1,5 +1,8 @@
+var trainingData = [];
+
 $(function(){
   setTimeout(initSlider,0);
+  setTimeout(bindButtons,5);
   setTimeout(createTrs,10);
   setTimeout(createTds,20);
   setTimeout(parseLetters,200);
@@ -241,6 +244,25 @@ function guessImageDatas(imgDatas){
   }
   
   return outp;
+}
+
+function bindButtons() {
+  $('.makeinput').click(function(){
+    var $scaled = $('.scaled canvas');
+    var $inputs = $('input.letterBox');
+    console.log($inputs[0].value);
+
+    $scaled.each(function(i, elem){
+      var scaledLetter = elem.getContext("2d").getImageData(0,0,elem.width,elem.height);
+      var answer = $inputs[i].value;
+      trainingData.push({
+        input: formatForBrain(scaledLetter),
+        output: answer
+      });
+    });
+    console.log(trainingData);
+
+  })
 }
 
 function formatForBrain(imgData){
