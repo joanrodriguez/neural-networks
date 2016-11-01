@@ -14,8 +14,17 @@ td {
   background-color: #dedede;
 }
 
+td.focus {
+  background-color: orange;
+}
+
 td canvas {
   border: 1px solid red;
+}
+
+td input {
+  height: 35px;
+  width: 35px;
 }
 
 .slider {

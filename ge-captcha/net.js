@@ -1,9 +1,10 @@
 $(function(){
-  initSlider();
-  createTds();
-  parseLetters();
-  scaleLetters();
-  formatLetters();
+  setTimeout(initSlider,0);
+  setTimeout(createTrs,10);
+  setTimeout(createTds,20);
+  setTimeout(parseLetters,200);
+  setTimeout(scaleLetters,400);
+  setTimeout(formatLetters,600);
 });
 
 function initSlider() {
@@ -17,10 +18,16 @@ function initSlider() {
     },
     stop: function( event, ui ) {
       parseLetters(ui.value);
+      scaleLetters();
     },
   });
   $( "#threshold" ).val( $( "#slider" ).slider( "value" ) );
 };
+
+function createTrs() {
+  for(var i=0; i<10; i++)
+    $('tbody').append('<tr><td class="original"><img src="originals/'+(+i+1)+'.jpeg" /></td></tr>');
+}
 
 function createTds() {
   $("tbody tr").each(function(index, elem){
@@ -28,15 +35,38 @@ function createTds() {
       $(elem).append('<td class="cropped"></td>');
     for(var i = 0; i<5; i++)
       $(elem).append('<td class="scaled"></td>');
-    for(var i = 0; i<2; i++){
-      console.log(elem);
+    for(var i = 0; i<5; i++){
       $(elem).append('<td class="input"></td>');
     }
   });
 
-  $('.input').each(function(index, elem){
-    console.log(elem);
-    $(elem).text('yo');
+  $(function(){
+    $('.input').each(function(index, elem){
+      $(elem).append('<input class="letterBox" type="text" />');
+    });
+  });
+
+  $(function(){
+    var $inputs = $('input.letterBox');
+    $inputs.each(function(i, elem){
+      $(elem).keyup(function(e){
+        var inp = String.fromCharCode(e.keyCode || e.which).toUpperCase();
+        if (/[a-zA-Z0-9-_ ]/.test(inp)){
+          this.value = inp;
+          $inputs[i+1].focus();
+        }
+      });
+      $(elem).focus(function(e){
+        $('.cropped').eq(i).addClass('focus');
+        $('.scaled').eq(i).addClass('focus');
+        $(this).parent().addClass('focus');
+      });
+      $(elem).blur(function(e){
+        $('.cropped').eq(i).removeClass('focus');
+        $('.scaled').eq(i).removeClass('focus');
+        $(this).parent().removeClass('focus');
+      });
+    });
   });
 
 };
@@ -49,7 +79,7 @@ function parseLetters(threshold){
   // Empty all tds
   $(".original img").each(function(i, elem) {
     $(elem).parents("tr").find("td").each(function(i, elem){
-      if(i>0)
+      if(i>0 && i<11)
         $(elem).empty();
     });
   });
@@ -66,7 +96,7 @@ function parseLetters(threshold){
 
     // draw image to canvas
     this.ctx.drawImage(img, 0, 0);
-    var ImageData = this.ctx.getImageData(0,0,this.c.width,this.c.height);
+    var ImageData = this.ctx.getImageData(0,0,img.width,img.height);
 
     var letters = [];
     
