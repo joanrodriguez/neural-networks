@@ -1,0 +1,23 @@
+table {
+  margin: 20px;
+  border-spacing: 5px;
+  border-collapse: separate;
+}
+
+table th, table td {
+  width: 50px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+td {
+  background-color: red;
+}
+
+td canvas {
+  border: 1px solid red;
+}
+
+.slider {
+  width: 200px;
+}

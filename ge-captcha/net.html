@@ -1,13 +1,89 @@
 <html>
   <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
     <script src="brain.js"></script>
     <script src="net.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+
   </head>
   <body>
-    <div class="previewer"></div>
-    <h1>Click the captchas</h1>
-    <img src="CaptchaImage.jpeg" />
+
+    <div class="slider">
+      <p>
+        <label for="amount">Donation amount ($50 increments):</label>
+        <input type="text" id="amount" readonly style="border:0; color:#f6931f; font-weight:bold;">
+      </p>
+       
+      <div id="slider"></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Originals</th>
+          <th>1</th>
+          <th>2</th>
+          <th>3</th>
+          <th>4</th>
+          <th>5</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="original">
+            <img src="originals/1.jpeg" />
+          </td>
+        </tr>
+        <tr>
+          <td class="original">
+            <img src="originals/2.jpeg" />
+          </td>
+        </tr>
+        <tr>
+          <td class="original">
+            <img src="originals/3.jpeg" />
+          </td>
+        </tr>
+        <tr>
+          <td class="original">
+            <img src="originals/4.jpeg" />
+          </td>
+        </tr>
+        <tr>
+          <td class="original">
+            <img src="originals/5.jpeg" />
+          </td>
+        </tr>
+        <tr>
+          <td class="original">
+            <img src="originals/6.jpeg" />
+          </td>
+        </tr>
+        <tr>
+          <td class="original">
+            <img src="originals/7.jpeg" />
+          </td>
+        </tr>
+        <tr>
+          <td class="original">
+            <img src="originals/8.jpeg" />
+          </td>
+        </tr>
+        <tr>
+          <td class="original">
+            <img src="originals/9.jpeg" />
+          </td>
+        </tr>
+        <tr>
+          <td class="original">
+            <img src="originals/10.jpeg" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </body>
 </html>

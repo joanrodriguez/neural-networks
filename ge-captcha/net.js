@@ -4,13 +4,43 @@ $(document).ready(function() {
 
 });
 
+$( function() {
+    $( "#slider" ).slider({
+      value:100,
+      min: 0,
+      max: 255,
+      step: 1,
+      slide: function( event, ui ) {
+        $( "#amount" ).val( ui.value );
+      },
+      stop: function( event, ui ) {
+        init(ui.value);
+      },
+    });
+    $( "#amount" ).val( $( "#slider" ).slider( "value" ) );
+} );
 
-function init(){
+
+
+function init(threshold){
+
+  threshold = threshold?threshold:100;
+
+  // Remove all tds
+  $(".original img").each(function(index, elem) {
+    $(elem).parents("tr").find("td").each(function(index, elem){
+      if(index>0)
+        elem.remove();
+    });
+  });
 
   xor();
 
-  $("img").on("click", function(elem) {
-    
+  $(".original img").find("mousemove", function(event) {
+
+    /*
+
+    // This is a color picker
     var img = $(this)[0];
 
     // create canvas for processing
@@ -22,12 +52,33 @@ function init(){
     // draw image to canvas
     this.ctx.drawImage(img, 0, 0);
     
-    console.log(this.c);
-    //document.body.appendChild(this.c);
+    var x = event.offsetX;
+    var y = event.offsetY;
+    var pixel = this.ctx.getImageData(x, y, 1, 1);
+    var data = pixel.data;
+    var rgba = 'rgba(' + data[0] + ',' + data[1] +
+             ',' + data[2] + ',' + (data[3] / 255) + ')';
+    console.log(rgba);
+
+    */
+
+  })
+
+  $(".original img").each(function(index, value) {
+    
+    var img = $(this)[0];
+
+    // create canvas for processing
+    this.c = document.createElement("canvas");
+    this.ctx = this.c.getContext("2d");
+    this.c.width = img.width;
+    this.c.height= img.height;
+
+    // draw image to canvas
+    this.ctx.drawImage(img, 0, 0);
+
 
     var ImageData = this.ctx.getImageData(0,0,this.c.width,this.c.height);
-
-    console.log(ImageData);
 
 
     var letters = [];
@@ -38,8 +89,7 @@ function init(){
       var foundLetterInColumn = false;
       for (var y = 0, k = ImageData.height; y < k; ++y) { // for every pixel
         var pixIndex = (y*ImageData.width+x)*4;
-        console.log(ImageData.data[pixIndex]);
-        if (ImageData.data[pixIndex] < 100) { // if we're dealing with a letter pixel
+        if (ImageData.data[pixIndex] < threshold) { // if we're dealing with a letter pixel
           foundLetterInColumn = foundLetter = true;
           // set data for this letter
           currentLetter.minX = Math.min(x, currentLetter.minX || Infinity);
@@ -58,14 +108,14 @@ function init(){
           currentLetter.maxX - currentLetter.minX,
           currentLetter.maxY - currentLetter.minY
         ));
-        
+
         // reset
         foundLetter = foundLetterInColumn = false;
         currentLetter = {};
       }
     }
 
-    console.log(letters);
+
     letters.map(function(letter){
 
       var canvas = document.createElement("canvas");
@@ -74,9 +124,47 @@ function init(){
       var ctx = canvas.getContext("2d");
       ctx.putImageData(letter,0,0);
 
-      document.body.appendChild(canvas);
+      console.log(canvas);
+
+      $(img).parents("tr").append($('<td></td>').append(canvas));
 
     })
+
+    var scaledLetters = [];
+
+    letters.map(function(letter){
+      
+      var s = 15;
+      var canvas = document.createElement('canvas');
+      canvas.width = s;
+      canvas.height = s;
+      var square = canvas.getContext('2d').createImageData(s, s);
+
+      // loop through every pixel in our small square
+      for (var x = 0; x < s; ++x) {
+        for (var y = 0; y < s; ++y) {
+          // find index in large imgData
+          var bigX = Math.floor(x/s * letter.width),
+              bigY = Math.floor(y/s * letter.height),
+              bigIndex = (bigY*letter.width+bigX)*4,
+              index = (y*s+x)*4;
+          // set pixel in square to pixel in image data
+          square.data[index] = letter.data[bigIndex];
+          // set alpha too, for display purposes
+          square.data[index+3] = 255;
+        }
+      }
+      
+      canvas.getContext('2d').putImageData(square,0,0);
+
+      console.log(square);
+      scaledLetters.push(square);
+
+      $(img).parents("tr").append($('<td></td>').append(canvas));
+
+
+    });
+
 
   });
 
