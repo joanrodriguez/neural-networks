@@ -10,6 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "brain.js": "^0.7.0",
-    "nedb": "^1.8.0"
+    "cheerio": "^0.22.0",
+    "nedb": "^1.8.0",
+    "request": "^2.76.0",
+    "request-promise": "^4.1.1"
   }
 }

@@ -1,63 +1,98 @@
 <html>
   <head>
 
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+
     <script src="brain.js"></script>
     <script src="net.js"></script>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="style.css" />
 
   </head>
   <body>
 
-    <div class="slider">
-      <p>
-        <label for="threshold">RGB Threshold:</label>
-        <input type="text" id="threshold" readonly style="border:0; color:#f6931f; font-weight:bold;">
-      </p>
-       
-      <div id="slider"></div>
+  <div class="result panel panel-default">
+    <div class="panel-heading">Result</div>
+      <div class="panel-body guess">
+        <canvas height="15" width="15"></canvas><span></span>
+        <ol></ol>
+      </div>
+  </div>
+
+  <div class="container-fluid">
+    
+    <div class="row">
+      <div class="col-md-4">
+
+        <div class="panel panel-default">
+          <div class="panel-heading">Letter Split</div>
+          <div class="panel-body">
+            <div class="slider">
+              <p>
+                <label for="threshold">RGB Threshold:</label>
+                <input type="text" id="threshold" readonly style="border:0; color:#f6931f; font-weight:bold;">
+              </p>
+               
+              <div id="slider"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="col-md-4">
+        <div class="panel panel-default">
+          <div class="panel-heading">Network</div>
+          <div class="panel-body">
+            <button class="trainBrain btn btn-primary btn-block">
+              Train Brain
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <button class="makeInput">
-      Make Training Data
-    </button>
+    <div class="row">
+      <div class="col-md-12">
 
-    <button class="trainBrain">
-      Train Brain
-    </button>
+        <table>
+          <thead>
+            <tr>
+              <th>Originals</th>
+              <th colspan="5">Cropped Letters</th>
+              <th colspan="5">Scaled Letters</th>
+              <th colspan="5">Answer</th>
+            </tr>
+            <tr>
+              <th></th>
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+              <th>4</th>
+              <th>5</th>
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+              <th>4</th>
+              <th>5</th>
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+              <th>4</th>
+              <th>5</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Originals</th>
-          <th colspan="5">Cropped Letters</th>
-          <th colspan="5">Scaled Letters</th>
-          <th colspan="5">Answer</th>
-        </tr>
-        <tr>
-          <th></th>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
+        </div>
+      </div>
+    </div>
+
   </body>
 </html>

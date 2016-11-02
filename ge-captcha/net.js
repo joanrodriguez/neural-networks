@@ -1,15 +1,15 @@
 var trainingData = [];
-var net = new brain.NeuralNetwork({hiddenLayers: [128,128]});
+var net = {};
 
 $(function(){
   setTimeout(initSlider,0);
   setTimeout(bindButtons,5);
   setTimeout(createTrs,10);
   setTimeout(createTds,20);
-  setTimeout(parseLetters,200);
-  setTimeout(scaleLetters,400);
-  setTimeout(formatLetters,600);
-  setTimeout(bindScaled,1000);
+  setTimeout(parseLetters,800);
+  setTimeout(scaleLetters,1000);
+  setTimeout(formatLetters,1200);
+  setTimeout(bindScaled,2000);
 });
 
 function initSlider() {
@@ -30,8 +30,8 @@ function initSlider() {
 };
 
 function createTrs() {
-  for(var i=0; i<10; i++)
-    $('tbody').append('<tr><td class="original"><img src="originals/'+(+i+1)+'.jpeg" /></td></tr>');
+  for(var i=0; i<25; i++)
+    $('tbody').append('<tr><td class="original"><img src="captchas/'+(+i+1)+'.jpeg" /></td></tr>');
 }
 
 function createTds() {
@@ -75,7 +75,6 @@ function createTds() {
   });
 
 };
-
 
 function parseLetters(threshold){
 
@@ -249,27 +248,9 @@ function guessImageDatas(imgDatas){
 }
 
 function bindButtons() {
-  $('.makeinput').click(function(){
-    trainingData = [];
-    var $scaled = $('.scaled canvas');
-    var $inputs = $('input.letterBox');
-
-    $scaled.each(function(i, elem){
-      if($inputs[i].value) {
-        var scaledLetter = elem.getContext("2d").getImageData(0,0,elem.width,elem.height);
-        var answer = {};
-        answer[$inputs[i].value] = 1;
-        trainingData.push({
-          input: formatForBrain(scaledLetter),
-          output: answer
-        });
-      }
-    });
-    console.log(trainingData);
-
-  });
-
   $('.trainBrain').click(function(){
+    makeTrainingData();
+    net = new brain.NeuralNetwork({hiddenLayers: [350,350]});
     console.log('Starting the training');
     net.train(trainingData,{
       errorThresh: 0.005,  // error threshold to reach
@@ -282,17 +263,40 @@ function bindButtons() {
 
 }
 
-function bindScaled(){
-  $('.scaled canvas').click(function(e){
-    var data = this.getContext("2d").getImageData(0,0,this.width,this.height);
-    var guesses = net.run(formatForBrain(data));
-    var guess = {string: "", probability: 0};
-    for (var k in guesses) {
-      if (guesses[k] > guess.probability) {
-        guess = {string: k, probability: guesses[k] }
-      }
+function makeTrainingData(){
+  trainingData = [];
+  var $scaled = $('.scaled');
+  var $inputs = $('.input');
+
+  $inputs.each(function(i, elem){
+    if(val = $inputs.eq(i).find('input')[0].value) {
+      var c = $scaled.eq(i).find('canvas')[0];
+      var scaledLetter = c.getContext("2d").getImageData(0,0,c.width,c.height);
+      var answer = {};
+      answer[val] = 1;
+      trainingData.push({
+        input: formatForBrain(scaledLetter),
+        output: answer
+      });
     }
-    alert("I think it's a... " + guess.string + "! (probability of " + Math.floor(guess.probability*100) + "%)")
+    });
+}
+function bindScaled(){
+  $('.scaled').click(function(e){
+    var c = $(this).find('canvas')[0];
+    var data = c.getContext("2d").getImageData(0,0,c.width,c.height);
+    $('.guess canvas')[0].getContext("2d").putImageData(data, 0, 0);
+    var guesses = net.run(formatForBrain(data));
+    var sortable = [];
+    for (var k in guesses)
+      sortable.push([k, Math.floor(guesses[k]*100)])
+    sortable.sort(function(a, b){
+      return b[1]-a[1]
+    });
+    $('.guess ol').empty();
+    for (var k in sortable) {
+      $('.guess ol').append('<li><b>' + sortable[k][0] + '</b> - ' + sortable[k][1] + '%</li>')
+    }
   })
 }
 
