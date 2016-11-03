@@ -122,6 +122,7 @@ function parseLetters(threshold){
       
       // if we've reached the end of this letter, push it to letters array
       if (!foundLetterInColumn && foundLetter) {
+
         // get letter pixels
         letters.push(this.ctx.getImageData(
           currentLetter.minX,
@@ -137,7 +138,38 @@ function parseLetters(threshold){
     }
 
 
+    if(letters.length !== 5){
+      for(var i=0; i<letters.length; i++){
+        l = letters[i];
+        console.log(l);
+        if(!l)
+          return letters.splice(i,1);
+
+        if(l && l.width/l.height>1.5){
+          var c = document.createElement("canvas");
+          var ctx = c.getContext("2d");
+          c.width = l.width;
+          c.height= l.height;
+          ctx.putImageData(l,0,0);
+
+          var iterations = Math.round(l.width/l.height);
+
+          for(var j=0; j<iterations; j++){
+            var remove = j==0?1:0;
+            letters.splice(i+j,remove,ctx.getImageData(j*l.width/iterations,0,l.width/iterations,l.height));
+          }
+
+        }
+
+      }
+      console.log(letters);
+    }
+
+
     letters.map(function(letter, i){
+
+      if(i>4)
+        return;
 
       var canvas = document.createElement("canvas");
       canvas.width = letter.width;
@@ -307,5 +339,4 @@ function formatForBrain(imgData){
   }
   return outp;
 }
-
 
