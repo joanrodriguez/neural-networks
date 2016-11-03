@@ -20,7 +20,7 @@
         // draw image on canvas
         ctx.drawImage(img, 0, 0);
         // retrieve data from canvas
-        var data = [].slice.call(ctx.getImageData(0,0,img.width,img.height).data);
+        var data = ctx.getImageData(0,0,img.width,img.height).data;
 
         // First we traverse the image from left to right through the middle
         // looking for black pixels
@@ -36,11 +36,8 @@
         // and finds all adjacent black pixels
         function fillLetter(i){
 
-          // Create a canvas to draw the discovered letter on
-          var c = document.createElement("canvas");
-          var ctx = c.getContext("2d");
-          c.width = img.width;
-          c.height= img.height;
+          // Create an array to store our letter coordinates
+          var coords = [];
 
           // Get x and y of black pixel from index
           var x = ix(i,img.width);
@@ -68,61 +65,82 @@
               pixelPos -= img.width * 4;
             }
 
-            // Then go down as long as there is black
+            // Then we descend through this image
+            // as long as there is black
             while(y < img.height && data[pixelPos]<threshold){
 
-              ctx.fillRect(x,y,1,1);
-              data.splice(pixelPos, 4, 255, 255, 255, 255);
+              // Collect the coordinate
+              coords.push([x,y]);
+              // Make the pixel white in the source data in
+              // order not to match it again
+              //data.splice(pixelPos, 4, 255, 255, 255, 255);
+              data.fill(255,pixelPos,pixelPos+4);
 
+              // Go one pixel down
               pixelPos += img.width*4;
               y++;
+              // By default we don't grab the pixels on the side
               reachLeft = false;
               reachRight = false;
 
-              // Look left
+              // If we are not on the left edge we look left
               if(x > 0)
               {
                 if(data[pixelPos-4]<threshold)
                 {
+                  // The pixel on the left is black so we create a new anchor
                   if(!reachLeft){
+                    // New column to explore
                     pixelStack.push([x - 1, y]);
                     reachLeft = true;
                   }
                 }
                 else if(reachLeft)
                 {
+                  // The pixel on the left is white so we remove the anchor
                   reachLeft = false;
                 }
               }
 
-
-              console.log("Time to look right maybe");
-              // Look right
+              // If we are not on the right edge we look right
               if(x < img.width-1)
               {
-                console.log("we are not at the end of pic, let's look");
                 if(data[pixelPos+4]<threshold)
                 {
-                  console.log("The pixel to our right is black, do we anchor?");
+                  // The pixel on the right is black so we create a new anchor
                   if(!reachRight)
                   {
-                    console.log("Done, we have anchored");
+                    // New column to explore
                     pixelStack.push([x + 1, y]);
                     reachRight = true;
                   }
                 }
                 else if(reachRight)
                 {
-                  console.log("The pixel on our right was white so we stoped looking");
+                  // The pixel on the right is white so we remove the anchor
                   reachRight = false;
                 }
               }
 
-
             }
           }
+
+          var maxX = Math.max.apply(Math,coords.map(function(c){return c[0];}));
+          var maxY = Math.max.apply(Math,coords.map(function(c){return c[1];}));
+          var minX = Math.min.apply(Math,coords.map(function(c){return c[0];}));
+          var minY = Math.min.apply(Math,coords.map(function(c){return c[1];}));
+
+          var c = document.createElement("canvas");
+          var ctx = c.getContext("2d");
+          c.width = maxX-minX;
+          c.height= maxY-minY;
+
+          coords.map(function(c){
+            ctx.fillRect(c[0]-minX,c[1]-minY,1,1);
+          });
+
           $('body').append(c);
-          console.log(c);
+
         }
 
         function ix(i,w){
