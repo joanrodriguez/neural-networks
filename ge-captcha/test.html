@@ -5,83 +5,71 @@
     <script>
 
       $(detect);
+
       function detect(){
 
         var img = $('img')[0];
-        console.log(img);
+
+        var threshold = 80;
 
         // create canvas for processing
         var c = document.createElement("canvas");
         var ctx = c.getContext("2d");
         c.width = img.width;
         c.height= img.height;
-
+        // draw image on canvas
         ctx.drawImage(img, 0, 0);
-
-
+        // retrieve data from canvas
         var data = [].slice.call(ctx.getImageData(0,0,img.width,img.height).data);
 
-        var offsets = {
-          topLeft: -img.width*4-4,
-          top: -img.width*4,
-          topRight: -img.width*4+4,
-          right: 4,
-          bottomRight: img.width*4+4,
-          bottom: img.width*4,
-          bottomLeft: img.width*4-4,
-          left: -4,
-        }
-
-
-        var letters = [[]];
-        console.log(letters);
-
-        for(var i = (Math.floor(img.height)/2)*img.width*4; i<data.length; i = i+4){
-
-          if(data[i]<100){
-
-            console.log('Found a black pixel at ' + i);
-
+        // First we traverse the image from left to right through the middle
+        // looking for black pixels
+        var middle = 4*Math.floor(img.height/2)*img.width;
+        for(var i = middle; i<data.length; i = i+4){
+          if(data[i]<threshold){
+            // Found a black pixel, now discover the letter
             fillLetter(i);
-
           }
-
         }
 
+        // "Paint bucket" algorithm that starts with a point in the canvas
+        // and finds all adjacent black pixels
         function fillLetter(i){
 
-          console.log("now filling the letter");
-
+          // Create a canvas to draw the discovered letter on
           var c = document.createElement("canvas");
           var ctx = c.getContext("2d");
           c.width = img.width;
           c.height= img.height;
 
+          // Get x and y of black pixel from index
           var x = ix(i,img.width);
           var y = iy(i,img.width);
 
+          // Add our starting pixel to the stack
           var pixelStack = [[x,y]];
 
+          // Loop through the stack which gets augmented as we discover pixels
           while(pixelStack.length){
-            console.log("iterating the stack");
+
             var newPos, x, y, pixelPos, reachLeft, reachRight;
+
+            // newPos is temporary and only used here
             newPos = pixelStack.pop();
             x = newPos[0];
             y = newPos[1];
 
+            // pixelPos is the index in the array
             var pixelPos = xyi(x,y,img.width);
 
             // Go up until no more black
-            while(y>= 0 && data[pixelPos-img.width*4]<100){
-              console.log("Going up");
+            while(y>= 0 && data[pixelPos-img.width*4]<threshold){
               y--;
               pixelPos -= img.width * 4;
             }
 
-
-
-            // Puis on descend
-            while(y < img.height && data[pixelPos]<100){
+            // Then go down as long as there is black
+            while(y < img.height && data[pixelPos]<threshold){
 
               ctx.fillRect(x,y,1,1);
               data.splice(pixelPos, 4, 255, 255, 255, 255);
@@ -94,7 +82,7 @@
               // Look left
               if(x > 0)
               {
-                if(data[pixelPos-4]<100)
+                if(data[pixelPos-4]<threshold)
                 {
                   if(!reachLeft){
                     pixelStack.push([x - 1, y]);
@@ -113,7 +101,7 @@
               if(x < img.width-1)
               {
                 console.log("we are not at the end of pic, let's look");
-                if(data[pixelPos+4]<100)
+                if(data[pixelPos+4]<threshold)
                 {
                   console.log("The pixel to our right is black, do we anchor?");
                   if(!reachRight)
@@ -137,32 +125,6 @@
           console.log(c);
         }
 
-
-        /*
-
-        for(var l in letters){
-          draw(l);
-        }
-
-        function draw(i){
-          console.log('yoyo');
-          var c = document.createElement("canvas");
-          var ctx = c.getContext("2d");
-          c.width = img.width;
-          c.height= img.height;
-
-          letters[i].map(function(l){
-            var x = ix(l,img.width);
-            var y = iy(l,img.width);
-            console.log(x);
-            console.log(y);
-            ctx.fillRect(x,y,1,1);
-          });
-          $('body').append(c);
-          console.log(c);
-        }
-        */
-
         function ix(i,w){
           return Math.floor(i/4)%w;
         }
@@ -179,6 +141,6 @@
     </script>
   </head>
   <body>
-    <img src="captchas/25.jpeg" />
+    <img src="captchas/7.jpeg" />
   </body>
 </html>
