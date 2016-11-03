@@ -1,0 +1,184 @@
+<html>
+
+  <head>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script>
+
+      $(detect);
+      function detect(){
+
+        var img = $('img')[0];
+        console.log(img);
+
+        // create canvas for processing
+        var c = document.createElement("canvas");
+        var ctx = c.getContext("2d");
+        c.width = img.width;
+        c.height= img.height;
+
+        ctx.drawImage(img, 0, 0);
+
+
+        var data = [].slice.call(ctx.getImageData(0,0,img.width,img.height).data);
+
+        var offsets = {
+          topLeft: -img.width*4-4,
+          top: -img.width*4,
+          topRight: -img.width*4+4,
+          right: 4,
+          bottomRight: img.width*4+4,
+          bottom: img.width*4,
+          bottomLeft: img.width*4-4,
+          left: -4,
+        }
+
+
+        var letters = [[]];
+        console.log(letters);
+
+        for(var i = (Math.floor(img.height)/2)*img.width*4; i<data.length; i = i+4){
+
+          if(data[i]<100){
+
+            console.log('Found a black pixel at ' + i);
+
+            fillLetter(i);
+
+          }
+
+        }
+
+        function fillLetter(i){
+
+          console.log("now filling the letter");
+
+          var c = document.createElement("canvas");
+          var ctx = c.getContext("2d");
+          c.width = img.width;
+          c.height= img.height;
+
+          var x = ix(i,img.width);
+          var y = iy(i,img.width);
+
+          var pixelStack = [[x,y]];
+
+          while(pixelStack.length){
+            console.log("iterating the stack");
+            var newPos, x, y, pixelPos, reachLeft, reachRight;
+            newPos = pixelStack.pop();
+            x = newPos[0];
+            y = newPos[1];
+
+            var pixelPos = xyi(x,y,img.width);
+
+            // Go up until no more black
+            while(y>= 0 && data[pixelPos-img.width*4]<100){
+              console.log("Going up");
+              y--;
+              pixelPos -= img.width * 4;
+            }
+
+
+
+            // Puis on descend
+            while(y < img.height && data[pixelPos]<100){
+
+              ctx.fillRect(x,y,1,1);
+              data.splice(pixelPos, 4, 255, 255, 255, 255);
+
+              pixelPos += img.width*4;
+              y++;
+              reachLeft = false;
+              reachRight = false;
+
+              // Look left
+              if(x > 0)
+              {
+                if(data[pixelPos-4]<100)
+                {
+                  if(!reachLeft){
+                    pixelStack.push([x - 1, y]);
+                    reachLeft = true;
+                  }
+                }
+                else if(reachLeft)
+                {
+                  reachLeft = false;
+                }
+              }
+
+
+              console.log("Time to look right maybe");
+              // Look right
+              if(x < img.width-1)
+              {
+                console.log("we are not at the end of pic, let's look");
+                if(data[pixelPos+4]<100)
+                {
+                  console.log("The pixel to our right is black, do we anchor?");
+                  if(!reachRight)
+                  {
+                    console.log("Done, we have anchored");
+                    pixelStack.push([x + 1, y]);
+                    reachRight = true;
+                  }
+                }
+                else if(reachRight)
+                {
+                  console.log("The pixel on our right was white so we stoped looking");
+                  reachRight = false;
+                }
+              }
+
+
+            }
+          }
+          $('body').append(c);
+          console.log(c);
+        }
+
+
+        /*
+
+        for(var l in letters){
+          draw(l);
+        }
+
+        function draw(i){
+          console.log('yoyo');
+          var c = document.createElement("canvas");
+          var ctx = c.getContext("2d");
+          c.width = img.width;
+          c.height= img.height;
+
+          letters[i].map(function(l){
+            var x = ix(l,img.width);
+            var y = iy(l,img.width);
+            console.log(x);
+            console.log(y);
+            ctx.fillRect(x,y,1,1);
+          });
+          $('body').append(c);
+          console.log(c);
+        }
+        */
+
+        function ix(i,w){
+          return Math.floor(i/4)%w;
+        }
+
+        function iy(i,w){
+          return Math.floor(i/(4*w));
+        }
+
+        function xyi(x,y,w){
+          return (y*w + x) * 4;
+        }
+
+      }
+    </script>
+  </head>
+  <body>
+    <img src="captchas/25.jpeg" />
+  </body>
+</html>
