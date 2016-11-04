@@ -1,20 +1,20 @@
 var trainingData = [];
 var net = {};
+var threshold = 120;
 
 $(function(){
   setTimeout(initSlider,0);
   setTimeout(bindButtons,5);
   setTimeout(createTrs,10);
   setTimeout(createTds,20);
+
   setTimeout(parseLetters,800);
-  setTimeout(scaleLetters,1000);
-  setTimeout(formatLetters,1200);
   setTimeout(bindScaled,2000);
 });
 
 function initSlider() {
   $( "#slider" ).slider({
-    value:100,
+    value: threshold,
     min: 0,
     max: 255,
     step: 1,
@@ -22,6 +22,7 @@ function initSlider() {
       $( "#threshold" ).val( ui.value );
     },
     stop: function( event, ui ) {
+      barScannerThreshold = ui.value;
       parseLetters(ui.value);
       scaleLetters();
     },
@@ -73,12 +74,9 @@ function createTds() {
       });
     });
   });
-
 };
 
-function parseLetters(threshold){
-
-  threshold = threshold?threshold:100;
+function parseLetters(){
 
   // Empty all tds
   $(".original img").each(function(i, elem) {
@@ -88,177 +86,253 @@ function parseLetters(threshold){
     });
   });
 
-  $(".original img").each(function(i, elem) {
+  $(".original img").each(function(i, img) {
     
-    var img = $(this)[0];
+    var letters = barScanner(img, threshold);
 
-    // create canvas for processing
-    this.c = document.createElement("canvas");
-    this.ctx = this.c.getContext("2d");
-    this.c.width = img.width;
-    this.c.height= img.height;
-
-    // draw image to canvas
-    this.ctx.drawImage(img, 0, 0);
-    var ImageData = this.ctx.getImageData(0,0,img.width,img.height);
-
-    var letters = [];
-    
-    var currentLetter = {};
-    var foundLetter = false;
-    for (var x = 0, j = ImageData.width; x < j; ++x) { // for every column
-      var foundLetterInColumn = false;
-      for (var y = 0, k = ImageData.height; y < k; ++y) { // for every pixel
-        var pixIndex = (y*ImageData.width+x)*4;
-        if (ImageData.data[pixIndex] < threshold) { // if we're dealing with a letter pixel
-          foundLetterInColumn = foundLetter = true;
-          // set data for this letter
-          currentLetter.minX = Math.min(x, currentLetter.minX || Infinity);
-          currentLetter.maxX = Math.max(x, currentLetter.maxX || -1);
-          currentLetter.minY = Math.min(y, currentLetter.minY || Infinity);
-          currentLetter.maxY = Math.max(y, currentLetter.maxY || -1);
-        }
-      }
-      
-      // if we've reached the end of this letter, push it to letters array
-      if (!foundLetterInColumn && foundLetter) {
-
-        // get letter pixels
-        letters.push(this.ctx.getImageData(
-          currentLetter.minX,
-          currentLetter.minY,
-          currentLetter.maxX - currentLetter.minX,
-          currentLetter.maxY - currentLetter.minY
-        ));
-
-        // reset
-        foundLetter = foundLetterInColumn = false;
-        currentLetter = {};
+    if(letters.length < 5) {
+      var t = threshold;
+      while(letters.length < 5 && t >= 0){
+        letters = paintBucket(img, t);
+        t -= 25;
       }
     }
 
+    letters.map(function(coords,j){
+      var unscaledCanvas = draw(coords);
+      var scaledCanvas = scaleLetters(unscaledCanvas);
 
-    if(letters.length !== 5){
-      for(var i=0; i<letters.length; i++){
-        l = letters[i];
-        console.log(l);
-        if(!l)
-          return letters.splice(i,1);
+      if(td = $(img).parents("tr").find(".cropped")[j]){
+        td.append(unscaledCanvas);
+      }
 
-        if(l && l.width/l.height>1.5){
-          var c = document.createElement("canvas");
-          var ctx = c.getContext("2d");
-          c.width = l.width;
-          c.height= l.height;
-          ctx.putImageData(l,0,0);
+      if(td = $(img).parents("tr").find(".scaled")[j]){
+        td.append(scaledCanvas);
+      }
 
-          var iterations = Math.round(l.width/l.height);
+    }); 
 
-          for(var j=0; j<iterations; j++){
-            var remove = j==0?1:0;
-            letters.splice(i+j,remove,ctx.getImageData(j*l.width/iterations,0,l.width/iterations,l.height));
+  });
+
+}
+
+function barScanner(img, threshold) {
+
+  threshold = threshold?threshold:100;
+
+  // create canvas for processing
+  this.c = document.createElement("canvas");
+  this.ctx = this.c.getContext("2d");
+  this.c.width = img.width;
+  this.c.height= img.height;
+
+  // draw image to canvas
+  this.ctx.drawImage(img, 0, 0);
+  var imageData = this.ctx.getImageData(0,0,img.width,img.height).data;
+
+  var letters = [];
+  var currentLetter = false;
+
+  for(var x = 0; x < img.width; x++) {
+    var foundBlack = false;    
+    for(var y = 0; y < img.height; y++) {
+      if(imageData[xyi(x,y,img.width)] < threshold) {
+        foundBlack = true;
+        if(currentLetter)
+          currentLetter.push([x,y]);
+        else
+          currentLetter = [[x,y]];
+      }
+    }
+    if(!foundBlack && currentLetter) {
+      letters.push(currentLetter);
+      currentLetter = false;
+    }
+  }
+
+  letters = letters.filter(function(coords){
+    return coords.length > 100;
+  });
+
+  return letters;
+}
+
+function paintBucket(img, threshold) {
+
+  threshold = threshold?threshold:175;
+
+  // create canvas for processing
+  var c = document.createElement("canvas");
+  var ctx = c.getContext("2d");
+  c.width = img.width;
+  c.height= img.height;
+  // draw image on canvas
+  ctx.drawImage(img, 0, 0);
+  // retrieve data from canvas
+  var data = ctx.getImageData(0,0,img.width,img.height).data;
+
+  var letters = [];
+
+  // First we traverse the image from left to right through the middle
+  // looking for black pixels
+  var middle = 4*Math.floor(img.height/2)*img.width;
+  for(var i = middle; i<data.length; i = i+4){
+    if(data[i]<threshold){
+      // Found a black pixel, now discover the letter
+      letters.push(fillLetter(i));
+    }
+  }
+
+  // "Paint bucket" algorithm that starts with a point in the canvas
+  // and finds all adjacent black pixels
+  function fillLetter(i){
+
+    // Create an array to store our letter coordinates
+    var coords = [];
+
+    // Get x and y of black pixel from index
+    var x = ix(i,img.width);
+    var y = iy(i,img.width);
+
+    // Add our starting pixel to the stack
+    var pixelStack = [[x,y]];
+
+    // Loop through the stack which gets augmented as we discover pixels
+    while(pixelStack.length){
+
+      var newPos, x, y, pixelPos, reachLeft, reachRight;
+
+      // newPos is temporary and only used here
+      newPos = pixelStack.pop();
+      x = newPos[0];
+      y = newPos[1];
+
+      // pixelPos is the index in the array
+      var pixelPos = xyi(x,y,img.width);
+
+      // Go up until no more black
+      while(y>= 0 && data[pixelPos-img.width*4]<threshold){
+        y--;
+        pixelPos -= img.width * 4;
+      }
+
+      // Then we descend through this image
+      // as long as there is black
+      while(y < img.height && data[pixelPos]<threshold){
+
+        // Collect the coordinate
+        coords.push([x,y]);
+        // Make the pixel white in the source data in
+        // order not to match it again
+        //data.splice(pixelPos, 4, 255, 255, 255, 255);
+        data.fill(255,pixelPos,pixelPos+4);
+
+        // Go one pixel down
+        pixelPos += img.width*4;
+        y++;
+        // By default we don't grab the pixels on the side
+        reachLeft = false;
+        reachRight = false;
+
+        // If we are not on the left edge we look left
+        if(x > 0)
+        {
+          if(data[pixelPos-4]<threshold)
+          {
+            // The pixel on the left is black so we create a new anchor
+            if(!reachLeft){
+              // New column to explore
+              pixelStack.push([x - 1, y]);
+              reachLeft = true;
+            }
           }
+          else if(reachLeft)
+          {
+            // The pixel on the left is white so we remove the anchor
+            reachLeft = false;
+          }
+        }
 
+        // If we are not on the right edge we look right
+        if(x < img.width-1)
+        {
+          if(data[pixelPos+4]<threshold)
+          {
+            // The pixel on the right is black so we create a new anchor
+            if(!reachRight)
+            {
+              // New column to explore
+              pixelStack.push([x + 1, y]);
+              reachRight = true;
+            }
+          }
+          else if(reachRight)
+          {
+            // The pixel on the right is white so we remove the anchor
+            reachRight = false;
+          }
         }
 
       }
-      console.log(letters);
     }
 
+    return coords;
 
-    letters.map(function(letter, i){
+  }
 
-      if(i>4)
-        return;
-
-      var canvas = document.createElement("canvas");
-      canvas.width = letter.width;
-      canvas.height = letter.height;
-      var ctx = canvas.getContext("2d");
-      ctx.putImageData(letter,0,0);
-
-      var td = $(img).parents("tr").find(".cropped")[i].append(canvas);
-
-    })
-
+  letters = letters.filter(function(coords){
+    return coords.length > 100;
   });
 
+  return letters;
 }
 
-function scaleLetters(){
+function draw(coords){
 
-  $("tbody tr").each(function(i, elem) {
-    $(elem).find(".cropped canvas").each(function(i, elem){
+  var maxX = Math.max.apply(Math,coords.map(function(c){return c[0];}));
+  var maxY = Math.max.apply(Math,coords.map(function(c){return c[1];}));
+  var minX = Math.min.apply(Math,coords.map(function(c){return c[0];}));
+  var minY = Math.min.apply(Math,coords.map(function(c){return c[1];}));
 
-      var BigLetter = elem.getContext("2d").getImageData(0,0,elem.width,elem.height);
+  var c = document.createElement("canvas");
+  var ctx = c.getContext("2d");
+  c.width = maxX-minX;
+  c.height= maxY-minY;
 
-      var s = 15;
-      var canvas = document.createElement('canvas');
-      canvas.width = s;
-      canvas.height = s;
-      var square = canvas.getContext('2d').createImageData(s, s);
-      
-      // loop through every pixel in our small square
-      for (var x = 0; x < s; ++x) {
-        for (var y = 0; y < s; ++y) {
-          // find index in large imgData
-          var bigX = Math.floor(x/s * BigLetter.width),
-              bigY = Math.floor(y/s * BigLetter.height),
-              bigIndex = (bigY*BigLetter.width+bigX)*4,
-              index = (y*s+x)*4;
-          // set pixel in square to pixel in image data
-          square.data[index] = BigLetter.data[bigIndex];
-          // set alpha too, for display purposes
-          square.data[index+3] = 255;
-        }
-      }
-
-      canvas.getContext('2d').putImageData(square,0,0);
-
-      $(elem).parents("tr").find(".scaled")[i].append(canvas);
-
-    });
+  coords.map(function(c){
+    ctx.fillRect(c[0]-minX,c[1]-minY,1,1);
   });
 
+  return c;
 }
 
-function formatLetters(){
+function scaleLetters(unscaledCanvas){
 
+  var BigLetter = unscaledCanvas.getContext("2d").getImageData(0,0,unscaledCanvas.width,unscaledCanvas.height);
+
+  var s = 15;
+  var scaledCanvas = document.createElement('canvas');
+  scaledCanvas.width = s;
+  scaledCanvas.height = s;
+  var square = scaledCanvas.getContext('2d').createImageData(s, s);
+  
+  // loop through every pixel in our small square
+  for (var x = 0; x < s; ++x) {
+    for (var y = 0; y < s; ++y) {
+      // find index in large imgData
+      var bigX = Math.floor(x/s * BigLetter.width),
+          bigY = Math.floor(y/s * BigLetter.height),
+          bigIndex = (bigY*BigLetter.width+bigX)*4,
+          index = (y*s+x)*4;
+      // set pixel in square to pixel in image data (only the transparency matters);
+      square.data[index+3] = BigLetter.data[bigIndex+3];
+    }
+  }
+
+  scaledCanvas.getContext('2d').putImageData(square,0,0);
+
+  return scaledCanvas;
 }
-
-function colorPicker() {
-  $(".original img").find("mousemove", function(event) {
-    // This is a color picker
-    var img = $(this)[0];
-
-    // create canvas for processing
-    this.c = document.createElement("canvas");
-    this.ctx = this.c.getContext("2d");
-    this.c.width = img.width;
-    this.c.height= img.height;
-
-    // draw image to canvas
-    this.ctx.drawImage(img, 0, 0);
-    
-    var x = event.offsetX;
-    var y = event.offsetY;
-    var pixel = this.ctx.getImageData(x, y, 1, 1);
-    var data = pixel.data;
-    var rgba = 'rgba(' + data[0] + ',' + data[1] +
-             ',' + data[2] + ',' + (data[3] / 255) + ')';
-    console.log(rgba);
-  });
-};
-
-function xor(){
-  var net = new brain.NeuralNetwork();
-  net.train([{input: [0, 0], output: [0]},
-             {input: [0, 1], output: [1]},
-             {input: [1, 0], output: [1]},
-             {input: [1, 1], output: [0]}]);
-  var output = net.run([1, 0]);  // [0.987]
-  console.log(output);
-};
 
 function guessImageDatas(imgDatas){
   var outp = [];
@@ -292,7 +366,6 @@ function bindButtons() {
     });
     console.log("Training Done");
   });
-
 }
 
 function makeTrainingData(){
@@ -313,6 +386,7 @@ function makeTrainingData(){
     }
     });
 }
+
 function bindScaled(){
   $('.scaled').click(function(e){
     var c = $(this).find('canvas')[0];
@@ -335,8 +409,20 @@ function bindScaled(){
 function formatForBrain(imgData){
   var outp = [];
   for (var i = 0, j = imgData.data.length; i < j; i+=4) {
-    outp[i/4] = imgData.data[i] / 255;
+    outp[i/4] = imgData.data[i+3] / 255;
   }
   return outp;
+}
+
+function ix(i,w){
+  return Math.floor(i/4)%w;
+}
+
+function iy(i,w){
+  return Math.floor(i/(4*w));
+}
+
+function xyi(x,y,w){
+  return (y*w + x) * 4;
 }
 
