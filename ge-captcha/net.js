@@ -1,15 +1,22 @@
 var trainingData = [];
 var net = {};
-var threshold = 120;
+var threshold = 90;
+var captchaCount = 140;
+
+if(!store.get('letters')) {
+  store.set('letters', new Array(1000).fill(new Array(5).fill()));
+}
 
 $(function(){
   setTimeout(initSlider,0);
   setTimeout(bindButtons,5);
   setTimeout(createTrs,10);
   setTimeout(createTds,20);
+  setTimeout(populateLetters,1000);
 
-  setTimeout(parseLetters,800);
-  setTimeout(bindScaled,2000);
+  setTimeout(parseLetters,2000);
+  setTimeout(bindScaled,3000);
+
 });
 
 function initSlider() {
@@ -22,17 +29,16 @@ function initSlider() {
       $( "#threshold" ).val( ui.value );
     },
     stop: function( event, ui ) {
-      barScannerThreshold = ui.value;
-      parseLetters(ui.value);
-      scaleLetters();
+      threshold = ui.value;
+      parseLetters();
     },
   });
   $( "#threshold" ).val( $( "#slider" ).slider( "value" ) );
 };
 
 function createTrs() {
-  for(var i=0; i<25; i++)
-    $('tbody').append('<tr><td class="original"><img src="captchas/'+(+i+1)+'.jpeg" /></td></tr>');
+  for(var i=0; i<captchaCount; i++)
+    $('tbody').append('<tr><td>' + i + '</td><td class="original"><img src="captchas/'+(+i+1)+'.jpeg" /></td></tr>');
 }
 
 function createTds() {
@@ -59,6 +65,8 @@ function createTds() {
         var inp = String.fromCharCode(e.keyCode || e.which).toUpperCase();
         if (/[a-zA-Z0-9-_ ]/.test(inp)){
           this.value = inp;
+          letters[Math.floor(i/5)][i%5] = inp;
+          store.set('letters',letters);
           $inputs[i+1].focus();
         }
       });
@@ -76,20 +84,19 @@ function createTds() {
   });
 };
 
-function parseLetters(){
+function parseLetters() {
 
   // Empty all tds
-  $(".original img").each(function(i, elem) {
-    $(elem).parents("tr").find("td").each(function(i, elem){
-      if(i>0 && i<11)
-        $(elem).empty();
-    });
+  $(".cropped, .scaled").each(function(i, elem) {
+    $(elem).empty();
   });
 
+  // Loop trough images
   $(".original img").each(function(i, img) {
     
+    // Start first with the easy algorithm
     var letters = barScanner(img, threshold);
-
+    // If not working, use paint bucket recursively
     if(letters.length < 5) {
       var t = threshold;
       while(letters.length < 5 && t >= 0){
@@ -98,21 +105,33 @@ function parseLetters(){
       }
     }
 
+    if(letters.length <5)
+      letters = barScanner(img, threshold);
+
+    // Now scale and draw the images
     letters.map(function(coords,j){
       var unscaledCanvas = draw(coords);
-      var scaledCanvas = scaleLetters(unscaledCanvas);
-
+      var scaledCanvas = scaleLetter(unscaledCanvas);
       if(td = $(img).parents("tr").find(".cropped")[j]){
         td.append(unscaledCanvas);
       }
-
       if(td = $(img).parents("tr").find(".scaled")[j]){
         td.append(scaledCanvas);
       }
-
-    }); 
+    });
 
   });
+
+}
+
+function populateLetters() {
+  if(letters = store.get('letters')){
+    $('tbody tr').each(function(i,tr){
+      $(this).find('td.input input').each(function(j,input){
+        input.value = letters[i][j];
+      });
+    })
+  };
 
 }
 
@@ -306,7 +325,7 @@ function draw(coords){
   return c;
 }
 
-function scaleLetters(unscaledCanvas){
+function scaleLetter(unscaledCanvas){
 
   var BigLetter = unscaledCanvas.getContext("2d").getImageData(0,0,unscaledCanvas.width,unscaledCanvas.height);
 
@@ -425,4 +444,3 @@ function iy(i,w){
 function xyi(x,y,w){
   return (y*w + x) * 4;
 }
-
