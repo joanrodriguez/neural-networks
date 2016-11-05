@@ -7,14 +7,20 @@ table {
   border-collapse: separate;
 }
 
-table th, table td {
-  width: 50px;
+th, td {
   text-align: center;
   vertical-align: middle;
 }
 
-td {
+td.cropped, td.scaled, td.input {
+  width: 50px;
   background-color: #dedede;
+}
+
+td.index {
+  width: 10px;
+  background-color: transparent;
+  font-weight: bold;
 }
 
 td.focus {

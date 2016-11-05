@@ -38,7 +38,7 @@ function initSlider() {
 
 function createTrs() {
   for(var i=0; i<captchaCount; i++)
-    $('tbody').append('<tr><td>' + i + '</td><td class="original"><img src="captchas/'+(+i+1)+'.jpeg" /></td></tr>');
+    $('tbody').append('<tr><td class="index">' + (i + 1) + '</td><td class="original"><img src="captchas/'+(+i+1)+'.jpeg" /></td></tr>');
 }
 
 function createTds() {
@@ -65,8 +65,10 @@ function createTds() {
         var inp = String.fromCharCode(e.keyCode || e.which).toUpperCase();
         if (/[a-zA-Z0-9-_ ]/.test(inp)){
           this.value = inp;
-          letters[Math.floor(i/5)][i%5] = inp;
-          store.set('letters',letters);
+          if($('#saveEdits')[0].checked){
+            letters[Math.floor(i/5)][i%5] = inp;
+            store.set('letters',letters);
+          }
           $inputs[i+1].focus();
         }
       });
@@ -132,7 +134,14 @@ function populateLetters() {
       });
     })
   };
+}
 
+function emptyLetters() {
+  $('tbody tr').each(function(i,tr){
+    $(this).find('td.input input').each(function(j,input){
+      input.value = null;
+    });
+  });
 }
 
 function barScanner(img, threshold) {
@@ -384,6 +393,12 @@ function bindButtons() {
       logPeriod: 10       // number of iterations between logging
     });
     console.log("Training Done");
+  });
+  $('#populate').click(function(){
+    populateLetters();
+  });
+  $('#empty').click(function(){
+    emptyLetters();
   });
 }
 
